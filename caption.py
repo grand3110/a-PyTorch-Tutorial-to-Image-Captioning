@@ -7,8 +7,11 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import skimage.transform
 import argparse
-from scipy.misc import imread, imresize
+# from scipy.misc import imread, imresize
+from skimage.io import imread
+from skimage.transform import resize as imresize
 from PIL import Image
+import pickle 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -33,7 +36,7 @@ def caption_image_beam_search(encoder, decoder, image_path, word_map, beam_size=
     if len(img.shape) == 2:
         img = img[:, :, np.newaxis]
         img = np.concatenate([img, img, img], axis=2)
-    img = imresize(img, (256, 256))
+    # img = imresize(img, (256, 256))
     img = img.transpose(2, 0, 1)
     img = img / 255.
     img = torch.FloatTensor(img).to(device)
@@ -213,6 +216,14 @@ if __name__ == '__main__':
     # Encode, decode with attention and beam search
     seq, alphas = caption_image_beam_search(encoder, decoder, args.img, word_map, args.beam_size)
     alphas = torch.FloatTensor(alphas)
+    print(seq)
+    cap = []
+    for i in seq[1:]:
+        if i != 9489:
+            cap.append(rev_word_map[i])
+    sentence = ' '.join(cap)
+    print(sentence)
+    pickle.dump( sentence, open( "save.p", "wb" ) )
 
     # Visualize caption and attention of best sequence
     visualize_att(args.img, seq, alphas, rev_word_map, args.smooth)
